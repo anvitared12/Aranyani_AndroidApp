@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Aranyani3</string>
+    <string name="auth0_client_id">7WFzNZjdGe39oTyskQNZoWKcoS0CYrm6</string>
+    <string name="auth0scheme">com.example.aranyani3</string>
+    <string name="auth0_domain">dev-4kcr20lp8jbha4pp.us.auth0.com</string>
+</resources>
