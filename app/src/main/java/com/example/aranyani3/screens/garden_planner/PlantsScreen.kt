@@ -26,16 +26,17 @@ import com.example.aranyani3.viewmodel.ScanHistoryViewModel  // ✅
 @Composable
 fun PlantsScreen(
     viewModel: GardenViewModel,
-    scanHistoryViewModel: ScanHistoryViewModel,  // ✅
+    scanHistoryViewModel: ScanHistoryViewModel,
     onBack: () -> Unit,
     onPlantCare: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current  // ✅
 
-    // ✅ Load plants once and save to scan history on success
-    LaunchedEffect(Unit) {
-        viewModel.loadPlants()
+    // KEY FIX: re-fires only when diameter/height are actually set (non-blank)
+    LaunchedEffect(state.potDiameterCm, state.potHeightCm) {
+        if (state.potDiameterCm.isNotBlank() && state.potHeightCm.isNotBlank()) {
+            viewModel.loadPlants()
+        }
     }
 
     Scaffold(
@@ -92,10 +93,33 @@ fun PlantsScreen(
                             textAlign = TextAlign.Center,
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        // ✅ Retry also passes the saveScan callback
                         Button(onClick = { viewModel.loadPlants() }) {
                             Text("Retry")
                         }
+                    }
+                }
+
+                // Show a hint if dimensions not yet provided
+                state.potDiameterCm.isBlank() -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocalFlorist,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(48.dp),
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No pot dimensions found. Please go back and complete the measurement step.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
 

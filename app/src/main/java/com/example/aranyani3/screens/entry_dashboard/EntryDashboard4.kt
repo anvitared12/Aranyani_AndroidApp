@@ -55,7 +55,7 @@ fun Entry_Dashboard4(navController: NavController){
         ) {
 
             Text(
-                text = "Regrow",
+                text = "Detect",
                 fontSize = 50.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Cursive,
@@ -65,8 +65,9 @@ fun Entry_Dashboard4(navController: NavController){
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Grow food \nfrom your kitchen ",
-                fontSize = 25.sp,
+                text = "Detect diseases from your plants ",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
                 color = Color.White
             )

@@ -6,9 +6,11 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,28 +28,29 @@ import kotlinx.coroutines.delay
 import kotlin.collections.firstOrNull
 
 // ─────────────────────────────────────────────
-// Color Palette
+// Color Palette — Clean Light Theme
 // ─────────────────────────────────────────────
-val SkyTop    = Color(0xFF0D1B3E)
-val SkyMid    = Color(0xFF1A3A6B)
-val CardBg    = Color(0xFF1E2D50)
-val CardBorder = Color(0xFF2E4A80)
-val AccentBlue = Color(0xFF4FC3F7)
-val AccentGold = Color(0xFFFFD54F)
-val TextPrimary = Color(0xFFE8F4FD)
-val TextSecondary = Color(0xFF8BAAC8)
+val PageBg        = Color(0xFFFFFFFF)
+val CardWhite     = Color(0xFFC0CA33)
+val ChipBg        = Color(0xFFE8EFF7)
+val PrimaryBlue   = Color(0xFF4A90D9)
+val SoftBlue      = Color(0xFF6AABEC)
+val TextDark      = Color(0xFF1A1F2E)
+val TextMid       = Color(0xFF5A6478)
+val TextLight     = Color(0xFF9AAABB)
+val AlertRed      = Color(0xFFFF5C5C)
+val AlertBg       = Color(0xFFFFF0F0)
 
 // ─────────────────────────────────────────────
 // Weather Screen
 // ─────────────────────────────────────────────
 @Composable
 fun WeatherScreen(
-    latitude: Double = 12.9716,   // Default: Bengaluru
+    latitude: Double = 12.9716,
     longitude: Double = 77.5946,
     viewModel: WeatherViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
 
     LaunchedEffect(latitude, longitude) {
         viewModel.fetchWeather(latitude, longitude)
@@ -56,11 +59,7 @@ fun WeatherScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(SkyTop, SkyMid, Color(0xFF0A1628))
-                )
-            )
+            .background(PageBg)
     ) {
         when {
             uiState.isLoading -> LoadingIndicator()
@@ -79,32 +78,32 @@ fun WeatherScreen(
 fun WeatherContent(state: com.example.aranyani3.viewmodel.WeatherUiState) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        // Hero current weather
+        // Hero Card
         item {
             AnimatedVisibility(
                 visible = true,
-                enter = fadeIn() + slideInVertically(initialOffsetY = { -40 })
+                enter = fadeIn(tween(500)) + slideInVertically(initialOffsetY = { -30 })
             ) {
                 CurrentWeatherHero(state)
             }
         }
 
-        // Section label
+        // Detailed hourly list
         item {
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = "24-Hour Forecast",
-                color = TextSecondary,
+                text = "Today's Details",
+                color = TextMid,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                letterSpacing = 2.sp,
-                modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+                letterSpacing = 1.sp,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
             )
         }
 
-        // Hourly forecast cards
         itemsIndexed(state.hourlyData) { index, hour ->
             AnimatedWeatherCard(hour = hour, index = index)
         }
@@ -120,89 +119,104 @@ fun WeatherContent(state: com.example.aranyani3.viewmodel.WeatherUiState) {
 fun CurrentWeatherHero(state: com.example.aranyani3.viewmodel.WeatherUiState) {
     val current = state.hourlyData.firstOrNull() ?: return
 
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(24.dp, RoundedCornerShape(28.dp), ambientColor = AccentBlue.copy(0.3f)),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            .background(CardWhite)
+            .padding(horizontal = 24.dp, vertical = 28.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(Color(0xFF1B3A6B), Color(0xFF0D2040))
-                    )
-                )
-                .border(1.dp, CardBorder, RoundedCornerShape(28.dp))
-                .padding(28.dp)
-        ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-
+        Column {
+            // Location name
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
                     Text(
-                        text = weatherIcon(current.weatherCode),
-                        fontSize = 64.sp
+                        text = state.locationName,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextDark
                     )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = state.locationName,
-                            color = TextSecondary,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 1.5.sp
-                        )
-
-                        Text(
-                            text = "${current.temperature.toInt()}°C",
-                            fontSize = 52.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
-                        )
-                        Text(
-                            text = weatherDescription(current.weatherCode),
-                            fontSize = 16.sp,
-                            color = AccentBlue
-                        )
-                    }
+                    Text(
+                        text = weatherDescription(current.weatherCode),
+                        fontSize = 14.sp,
+                        color = TextMid
+                    )
                 }
+                // Weather icon large
+                Text(
+                    text = weatherIcon(current.weatherCode),
+                    fontSize = 72.sp
+                )
+            }
 
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider(color = CardBorder, thickness = 0.5.dp)
-                Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
-                    MetricChip(icon = Icons.Default.Air, label = "Wind", value = "${current.windSpeed.toInt()} km/h")
-                    MetricChip(icon = Icons.Default.WaterDrop, label = "Humidity", value = "${current.humidity}%")
-                    MetricChip(icon = Icons.Default.Visibility, label = "Feels like", value = "${current.apparentTemp.toInt()}°")
-                }
+            // Big temperature
+            Text(
+                text = "${current.temperature.toInt()}°C",
+                fontSize = 72.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextDark,
+                letterSpacing = (-2).sp
+            )
+
+            Text(
+                text = "Real feel  ${current.apparentTemp.toInt()}°C",
+                fontSize = 14.sp,
+                color = TextMid,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Metric chips row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                MetricChip(
+                    icon = Icons.Default.Air,
+                    label = "Wind",
+                    value = "${current.windSpeed.toInt()} km/h",
+                    modifier = Modifier.weight(1f)
+                )
+                MetricChip(
+                    icon = Icons.Default.Thermostat,
+                    label = "Temperature",
+                    value = "${current.temperature.toInt()}°C",
+                    modifier = Modifier.weight(1f)
+                )
+                MetricChip(
+                    icon = Icons.Default.WaterDrop,
+                    label = "Humidity",
+                    value = "${current.humidity}%",
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
 }
 
 // ─────────────────────────────────────────────
-// Animated Hourly Card
+// Animated Hourly Detail Card
 // ─────────────────────────────────────────────
 @Composable
 fun AnimatedWeatherCard(hour: HourlyWeather, index: Int) {
     var visible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(index * 80L)
+        delay(index * 60L)
         visible = true
     }
 
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(tween(400)) + slideInHorizontally(
-            initialOffsetX = { it / 2 },
-            animationSpec = tween(400, easing = EaseOutCubic)
+        enter = fadeIn(tween(350)) + slideInHorizontally(
+            initialOffsetX = { it / 3 },
+            animationSpec = tween(350, easing = EaseOutCubic)
         )
     ) {
         WeatherCard(hour = hour)
@@ -210,119 +224,113 @@ fun AnimatedWeatherCard(hour: HourlyWeather, index: Int) {
 }
 
 // ─────────────────────────────────────────────
-// Weather Card
+// Weather Detail Card
 // ─────────────────────────────────────────────
 @Composable
 fun WeatherCard(hour: HourlyWeather) {
-    val isAlert = hour.weatherCode >= 65  // Rain/storm threshold
+    val isAlert = hour.weatherCode >= 65
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = if (isAlert) 12.dp else 6.dp,
-                shape = RoundedCornerShape(20.dp),
-                ambientColor = if (isAlert) Color(0xFFFF6B6B).copy(0.3f) else AccentBlue.copy(0.15f)
-            ),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            .padding(horizontal = 20.dp, vertical = 5.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isAlert) AlertBg else CardWhite
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.horizontalGradient(
-                        colors = if (isAlert)
-                            listOf(Color(0xFF3D1515), Color(0xFF251428))
-                        else
-                            listOf(CardBg, Color(0xFF162238))
-                    )
-                )
-                .border(
-                    width = 1.dp,
-                    brush = Brush.horizontalGradient(
-                        colors = if (isAlert)
-                            listOf(Color(0xFFFF6B6B).copy(0.5f), Color(0xFFFF8E53).copy(0.3f))
-                        else
-                            listOf(CardBorder.copy(0.6f), CardBorder.copy(0.2f))
-                    ),
-                    shape = RoundedCornerShape(20.dp)
-                )
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Time
-                Column(modifier = Modifier.width(60.dp)) {
+            // Time column
+            Column(modifier = Modifier.width(56.dp)) {
+                Text(
+                    text = hour.time,
+                    color = TextMid,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (isAlert) {
                     Text(
-                        text = hour.time,
-                        color = TextSecondary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    if (isAlert) {
-                        Text(
-                            text = "⚠ Alert",
-                            color = Color(0xFFFF8E53),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                // Icon + description
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(text = weatherIcon(hour.weatherCode), fontSize = 32.sp)
-                    Column {
-                        Text(
-                            text = weatherDescription(hour.weatherCode),
-                            color = TextPrimary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "💨 ${hour.windSpeed.toInt()} km/h",
-                            color = TextSecondary,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-
-                // Temperature
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "${hour.temperature.toInt()}°C",
-                        color = tempColor(hour.temperature),
-                        fontSize = 22.sp,
+                        text = "⚠ Alert",
+                        color = AlertRed,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "💧 ${hour.humidity}%",
-                        color = TextSecondary,
-                        fontSize = 12.sp
                     )
                 }
             }
+
+            // Icon + description
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(ChipBg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = weatherIcon(hour.weatherCode), fontSize = 22.sp)
+                }
+                Column {
+                    Text(
+                        text = weatherDescription(hour.weatherCode),
+                        color = TextDark,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "💨 ${hour.windSpeed.toInt()} km/h  💧 ${hour.humidity}%",
+                        color = TextLight,
+                        fontSize = 11.sp
+                    )
+                }
+            }
+
+            // Temperature
+            Text(
+                text = "${hour.temperature.toInt()}°",
+                color = tempColor(hour.temperature),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
 
 // ─────────────────────────────────────────────
-// Metric chip
+// Metric Chip
 // ─────────────────────────────────────────────
 @Composable
-fun MetricChip(icon: ImageVector, label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, contentDescription = label, tint = AccentBlue, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = value, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-        Text(text = label, color = TextSecondary, fontSize = 11.sp)
+fun MetricChip(icon: ImageVector, label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        horizontalAlignment = Alignment.Start,
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(ChipBg)
+            .padding(horizontal = 12.dp, vertical = 12.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = PrimaryBlue,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(text = label, color = TextLight, fontSize = 11.sp)
+        Text(
+            text = value,
+            color = TextDark,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
@@ -333,9 +341,9 @@ fun MetricChip(icon: ImageVector, label: String, value: String) {
 fun LoadingIndicator() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(color = AccentBlue, strokeWidth = 3.dp)
+            CircularProgressIndicator(color = PrimaryBlue, strokeWidth = 3.dp)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Fetching weather...", color = TextSecondary, fontSize = 14.sp)
+            Text("Fetching weather...", color = TextMid, fontSize = 14.sp)
         }
     }
 }
@@ -349,7 +357,7 @@ fun ErrorCard(message: String, onRetry: () -> Unit) {
         Card(
             modifier = Modifier.padding(32.dp),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF3D1515))
+            colors = CardDefaults.cardColors(containerColor = AlertBg)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -357,13 +365,13 @@ fun ErrorCard(message: String, onRetry: () -> Unit) {
             ) {
                 Text("⚠️", fontSize = 40.sp)
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(message, color = TextPrimary, fontSize = 14.sp)
+                Text(message, color = TextDark, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = onRetry,
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                 ) {
-                    Text("Retry", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text("Retry", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -371,7 +379,7 @@ fun ErrorCard(message: String, onRetry: () -> Unit) {
 }
 
 // ─────────────────────────────────────────────
-// Helpers
+// Helpers — unchanged
 // ─────────────────────────────────────────────
 fun weatherIcon(code: Int): String = when (code) {
     0 -> "☀️"
@@ -415,9 +423,9 @@ fun weatherDescription(code: Int): String = when (code) {
 }
 
 fun tempColor(temp: Double): Color = when {
-    temp <= 10 -> Color(0xFF81D4FA)
-    temp <= 20 -> AccentBlue
-    temp <= 28 -> Color(0xFF80CBC4)
-    temp <= 35 -> AccentGold
-    else -> Color(0xFFFF8A65)
+    temp <= 10 -> Color(0xFF64B5F6)
+    temp <= 20 -> PrimaryBlue
+    temp <= 28 -> Color(0xFF26A69A)
+    temp <= 35 -> Color(0xFFFFA726)
+    else -> Color(0xFFEF5350)
 }

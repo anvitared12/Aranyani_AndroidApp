@@ -206,7 +206,8 @@ fun AppNavigation() {
                 onSustainableClick = { navController.navigate("sustainable") },
                 onCompostReminderClick = { navController.navigate("compostReminder") },
                 userEmail = uiState.userEmail,
-                scanHistoryViewModel = scanHistoryViewModel
+                scanHistoryViewModel = scanHistoryViewModel,
+                gardenViewModel = gardenViewModel
             )
         }
 
@@ -232,16 +233,17 @@ fun AppNavigation() {
         // ── Disease Detection ─────────────────────────────────────────
         // ── Disease Detection ─────────────────────────────────────────
         composable("DiagnosePlant") {
-            DiseaseDetectionScreen(scanHistoryViewModel = scanHistoryViewModel,
+            DiseaseDetectionScreen(
+                scanHistoryViewModel = scanHistoryViewModel,
+                onBack = { navController.popBackStack() },   // ← add this
                 onAddCureClick = { diseaseName ->
                     val cleaned = diseaseName
-                        .replace("_", " ")   // replace underscores with spaces
+                        .replace("_", " ")
                         .trim()
                     navController.navigate("disease_cure?query=$cleaned")
                 }
             )
         }
-
         composable(
             route = "disease_cure?query={query}",
             arguments = listOf(navArgument("query") { defaultValue = "" })
@@ -258,7 +260,8 @@ fun AppNavigation() {
             HomeScreen(
                 viewModel      = gardenViewModel,
                 onPhotoTaken   = { navController.navigate("gardenMarkup") },
-                onSettingsClick = { }
+                onSettingsClick = { },
+                onBack          = { navController.popBackStack() }
             )
         }
 

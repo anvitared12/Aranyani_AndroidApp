@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -48,77 +49,52 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import com.example.aranyani3.R
 import com.example.aranyani3.auth.AuthViewModel
 import com.example.aranyani3.screens.myplants.MyScans
 import com.example.aranyani3.screens.weather.WeatherScreen
 import com.example.sustainablegrowing.Regrow
 import com.example.aranyani3.auth.Auth0Manager
-import com.example.aranyani3.screens.myplants.MyScans
+import com.example.aranyani3.viewmodel.GardenViewModel
 import com.example.aranyani3.viewmodel.ScanHistoryViewModel
+import com.example.aranyani3.screens.garden_planner.PlantsScreen
 
+val MyCustomFont = FontFamily(
+    Font(R.font.font)
+)
 
-// ─────────────────────────────────────────────
-//  Color Tokens
-// ─────────────────────────────────────────────
 private object AppColors {
-    val DeepForest       = Color(0xFF2D4A1E)
-    val RichFern         = Color(0xFF4A7A2F)
-    val Garden           = Color(0xFF6B9E45)
     val Leaf             = Color(0xFF8FBF5E)
-    val Sage             = Color(0xFFB5D48A)
-    val MintMist         = Color(0xFFD8EAC0)
-    val LinenLeaf        = Color(0xFFEBF0D6)
-
-    val MossDark         = Color(0xFF3B4A22)
-    val Olive            = Color(0xFF5C6E30)
-    val Herb             = Color(0xFF879A4E)
-
-    val Cream            = Color(0xFFF5F0E8)
-    val Parchment        = Color(0xFFEDE6D8)
-    val Sand             = Color(0xFFE2D9C6)
-    val Latte            = Color(0xFFC8BC9E)
-
-    val Terracotta       = Color(0xFFC96B3A)
     val Harvest          = Color(0xFFE8893E)
-    val Golden           = Color(0xFFF2B135)
-    val Sunrise          = Color(0xFFF7D06A)
-
-    val Headline         = Color(0xFF1A2810)
-    val BodyDark         = Color(0xFF2F4A1C)
-    val Body             = Color(0xFF4D6E35)
-    val Muted            = Color(0xFF7A9E5C)
-
+    val AppBg            = Color(0xFFF2F2F2)
+    val CardSurface      = Color(0xFFEEEDED)
+    val CardSurfaceAlt   = Color(0xFFEEEDED)
+    val CardTitle        = Color(0xFF1A1A1A)
+    val CardSubtitle     = Color(0xFF888888)
+    val CardStat         = Color(0xFF555555)
+    val SearchBg         = Color(0xFFFFFFFF)
+    val NavBg            = Color(0xFFFDFDFD)
+    val NavBorder        = Color(0xFFDDDDDD)
+    val GreenBtn         = Color(0xFF7CB342)
+    val LogoGreen        = Color(0xFF3DAF3F)
     val heroGradient = Brush.verticalGradient(
         0f to Color(0x00000000),
         0.5f to Color(0x44000000),
         1f to Color(0xBB1A2810)
     )
-    val cardGradient = Brush.linearGradient(
-        listOf(Color(0xFF3B5A28), Color(0xFF6B9E45))
-    )
-    val reminderGradient = Brush.linearGradient(
-        listOf(Color(0xFF4A7A2F), Color(0xFF6B9E45), Color(0xFF879A4E))
-    )
-    val exploreGradient = Brush.linearGradient(
-        listOf(Color(0xFF2D4A1E), Color(0xFF3B5A28))
-    )
-    val navGradient = Brush.linearGradient(
-        listOf(Color(0xFFD8EAC0), Color(0xFFEBF0D6))
-    )
-    val appBackground = Brush.verticalGradient(
-        listOf(Color(0xFFF5F0E8), Color(0xFFEBF0D6))
-    )
 }
 
-// ─────────────────────────────────────────────
-//  Root Screen
-// ─────────────────────────────────────────────
-enum class Screen { Home, MyPlants, Weather, Regrow }
+// ── Add Plants to the Screen enum ──
+enum class Screen { Home, MyPlants, Weather, Regrow, Plants }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -131,17 +107,19 @@ fun MainHome(
     onSustainableClick: () -> Unit = {},
     onCompostReminderClick: () -> Unit,
     userEmail: String? = null,
-    scanHistoryViewModel: ScanHistoryViewModel
+    scanHistoryViewModel: ScanHistoryViewModel,
+    gardenViewModel: GardenViewModel          // ← add this
 ) {
-    // 1. Add state to track the current screen
     var currentScreen by remember { mutableStateOf(Screen.Home) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AppColors.appBackground)
-    ) {
-        // 2. Use a when statement to display the correct screen content
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.homebackground),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
         when (currentScreen) {
             Screen.Home -> {
                 HomeDashboardBody(
@@ -158,11 +136,24 @@ fun MainHome(
                     userEmail = userEmail
                 )
             }
+
             Screen.MyPlants -> {
-                MyScans(viewModel = scanHistoryViewModel)
+                MyScans(
+                    viewModel = scanHistoryViewModel,
+                    onViewPlants = { currentScreen = Screen.Plants }  // ← fixed
+                )
             }
+
+            Screen.Plants -> {
+                PlantsScreen(
+                    viewModel = gardenViewModel,
+                    scanHistoryViewModel = scanHistoryViewModel,
+                    onBack = { currentScreen = Screen.MyPlants },
+                    onPlantCare = { /* navigate to care screen if you have one */ }
+                )
+            }
+
             Screen.Weather -> {
-                // Placeholder for Weather screen
                 WeatherScreen()
             }
 
@@ -171,16 +162,19 @@ fun MainHome(
             }
         }
 
-        // 3. Update the BottomNavBar callbacks to change the currentScreen state
-        BottomNavBar(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
-            onHome = { currentScreen = Screen.Home },
-            onMyPlants = { currentScreen = Screen.MyPlants },
-            onWeather = { currentScreen = Screen.Weather },
-            onRegrow = { currentScreen = Screen.Regrow },
-        )
+        // Hide bottom nav when on Plants screen (it has its own TopAppBar back button)
+        if (currentScreen != Screen.Plants) {
+            BottomNavBar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                currentScreen = currentScreen,
+                onHome = { currentScreen = Screen.Home },
+                onMyPlants = { currentScreen = Screen.MyPlants },
+                onWeather = { currentScreen = Screen.Weather },
+                onRegrow = { currentScreen = Screen.Regrow },
+            )
+        }
     }
 }
 
@@ -201,72 +195,125 @@ fun HomeDashboardBody(
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 110.dp)
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 36.dp, bottom = 120.dp)
     ) {
         item { TopBar(onLogout = onLogout) }
-        item { Spacer(modifier = Modifier.height(10.dp)) }
-        item { HeaderSection(onLogout = onLogout, userEmail = userEmail) }
         item { Spacer(modifier = Modifier.height(20.dp)) }
-
+        item {
+            Column {
+                Text(
+                    text = "Hello,",
+                    fontSize = 38.sp,
+                    fontFamily = MyCustomFont,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = AppColors.CardTitle,
+                    letterSpacing = (-1).sp,
+                    lineHeight = 42.sp
+                )
+                Text(
+                    text = "Plant Lover ",
+                    fontFamily = MyCustomFont,
+                    fontSize = 38.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    letterSpacing = (-1).sp,
+                    lineHeight = 46.sp
+                )
+            }
+        }
+        item { Spacer(modifier = Modifier.height(24.dp)) }
         item {
             ActionButtons(
                 onScanPlant = onScanPlant,
                 onDiagnosePlant = onDiagnosePlant,
             )
         }
-
         item { Spacer(modifier = Modifier.height(16.dp)) }
         item { GardenPlanCard(onClick = onGardenPlan) }
-        item { Spacer(modifier = Modifier.height(24.dp)) }
-
+        item { Spacer(modifier = Modifier.height(16.dp)) }
         item {
             CareReminderSection(
                 onReminderClick = onReminderClick,
-                onCompostReminderClick = onCompostReminderClick   // add this
+                onCompostReminderClick = onCompostReminderClick
             )
         }
-
-        item { Spacer(modifier = Modifier.height(20.dp)) }
+        item { Spacer(modifier = Modifier.height(16.dp)) }
         item { ExploreCard(onClick = onSustainableClick) }
-        // ✅ FIX 4: onClick passed to ExploreCard
     }
 }
 
 // ─────────────────────────────────────────────
-//  Top Bar with Logout
+//  Top Bar
 // ─────────────────────────────────────────────
 @Composable
 fun TopBar(onLogout: () -> Unit = {}) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("🌿", fontSize = 20.sp)
-            Text(
-                text = "Aranyani",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = AppColors.DeepForest,
-                letterSpacing = (-0.4).sp
-            )
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, AppColors.LogoGreen, CircleShape)
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🌿", fontSize = 18.sp)
+            }
+            Column {
+                Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                    Text(
+                        text = "Aranyani",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = AppColors.CardTitle,
+                        letterSpacing = (-0.3).sp
+                    )
+                }
+            }
+        }
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .background(Color(0xFF9CCC65))
+                .clickable(onClick = onLogout)
+                .padding(horizontal = 12.dp, vertical = 7.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ExitToApp,
+                    contentDescription = "Logout",
+                    tint = AppColors.CardStat,
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    text = "Logout",
+                    color = AppColors.CardStat,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }
 
 // ─────────────────────────────────────────────
-//  Header (Hero card)
+//  Header (kept for compatibility)
 // ─────────────────────────────────────────────
 @Composable
 fun HeaderSection(
     onLogout: () -> Unit = {},
-    userEmail: String? = null) {
+    userEmail: String? = null
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -284,58 +331,16 @@ fun HeaderSection(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(AppColors.heroGradient)
-        )
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(14.dp)
-                .clip(RoundedCornerShape(50))
-                .background(Color.White.copy(alpha = 0.18f))
-                .border(
-                    width = 0.5.dp,
-                    color = Color.White.copy(alpha = 0.35f),
-                    shape = RoundedCornerShape(50)
-                )
-                .clickable(onClick = onLogout)
-                .padding(horizontal = 12.dp, vertical = 7.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ExitToApp,
-                    contentDescription = "Logout",
-                    tint = Color.White,
-                    modifier = Modifier.size(14.dp)
-                )
-                Text(
-                    text = "Logout",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-
+        Box(modifier = Modifier.fillMaxSize().background(AppColors.heroGradient))
         Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(20.dp)
+            modifier = Modifier.align(Alignment.BottomStart).padding(20.dp)
         ) {
-            Spacer(modifier = Modifier.height(6.dp))
             val displayName = userEmail
                 ?.substringBefore("@")
                 ?.replaceFirstChar { it.uppercase() }
                 ?: "Gardener"
             Text(
-                text = "Hello, $displayName 🌿",
+                text = "Hello, $displayName",
                 color = Color.White,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
@@ -344,14 +349,15 @@ fun HeaderSection(
             Text(
                 text = "Your garden is thriving today",
                 color = Color.White.copy(alpha = 0.75f),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Normal
+                fontSize = 13.sp
             )
         }
     }
 }
 
-
+// ─────────────────────────────────────────────
+//  Action Buttons
+// ─────────────────────────────────────────────
 @Composable
 fun ActionButtons(
     onScanPlant: () -> Unit,
@@ -405,60 +411,59 @@ fun ActionCard(
 
     Box(
         modifier = modifier
-            .height(130.dp)
+            .height(160.dp)
             .scale(scale)
-            .clip(RoundedCornerShape(24.dp))
+            .shadow(elevation = 1.dp, shape = RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(26.dp))
+            .background(AppColors.CardSurface)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
             )
-            .background(brush = Brush.linearGradient(colors = cardColors))
-            .border(
-                width = 1.dp,
-                color = Color.White.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(24.dp)
-            )
     ) {
-        Box(
+        Text(
+            text = emoji,
+            fontSize = 52.sp,
             modifier = Modifier
-                .size(70.dp)
                 .align(Alignment.TopEnd)
-                .offset(x = 20.dp, y = (-20).dp)
-                .background(Color.White.copy(alpha = 0.06f), CircleShape)
+                .padding(top = 10.dp, end = 12.dp)
         )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(18.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.Bottom
         ) {
+            Text(
+                text = text,
+                color = AppColors.CardTitle,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.3).sp
+            )
+            if (subtitleText.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(
+                    text = subtitleText,
+                    color = AppColors.CardSubtitle,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Normal
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
             Box(
                 modifier = Modifier
-                    .size(42.dp)
-                    .background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
+                    .clip(RoundedCornerShape(50))
+                    .background(AppColors.GreenBtn.copy(alpha = 0.15f))
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
-                Text(emoji, fontSize = 20.sp)
-            }
-
-            Column {
                 Text(
-                    text = text,
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = (-0.2).sp
+                    text = "Tap →",
+                    color = AppColors.GreenBtn,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
-                if (subtitleText.isNotEmpty()) {
-                    Text(
-                        text = subtitleText,
-                        color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Normal
-                    )
-                }
             }
         }
     }
@@ -486,30 +491,17 @@ fun GardenPlanCard(onClick: () -> Unit = {}) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp)
+            .height(90.dp)
             .scale(scale)
-            .clip(RoundedCornerShape(24.dp))
+            .shadow(elevation = 1.dp, shape = RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(26.dp))
+            .background(AppColors.CardSurface)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
             )
-            .background(
-                brush = Brush.linearGradient(
-                    listOf(Color(0xFFE8893E), Color(0xFFF2B135))
-                )
-            )
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.radialGradient(
-                        listOf(Color.White.copy(0.08f), Color.Transparent)
-                    )
-                )
-        )
-
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -521,30 +513,34 @@ fun GardenPlanCard(onClick: () -> Unit = {}) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Text("🍊", fontSize = 28.sp)
+                Text("🍊", fontSize = 36.sp)
                 Column {
                     Text(
                         "Plan your Garden",
                         fontSize = 15.sp,
-                        color = Color.White,
+                        color = AppColors.CardTitle,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.3).sp
                     )
                     Text(
-                        "Seasonal planting guide →",
+                        "Seasonal planting guide",
                         fontSize = 11.sp,
-                        color = Color.White.copy(alpha = 0.75f)
+                        color = AppColors.CardSubtitle
                     )
                 }
             }
-
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                    .size(34.dp)
+                    .background(AppColors.Harvest.copy(alpha = 0.15f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text("→", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "→",
+                    color = AppColors.Harvest,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -556,33 +552,33 @@ fun GardenPlanCard(onClick: () -> Unit = {}) {
 @Composable
 fun CareReminderSection(
     onReminderClick: () -> Unit,
-    onCompostReminderClick: () -> Unit = {},   // add this
+    onCompostReminderClick: () -> Unit = {},
     onSeeAllClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val reminders = listOf(
         ReminderItem("Composting Schedule", "🍂", setOf(1, 3, 5)),
-        ReminderItem("Watering Schedule", "💧", setOf(2, 4, 6, 7))
+        ReminderItem("Watering Schedule", "\uD83C\uDF27\uFE0F", setOf(2, 4, 6, 7))
     )
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Spacer(modifier = Modifier.height(2.dp))
-
         reminders.forEachIndexed { index, reminder ->
             ReminderCard(
                 title = reminder.title,
                 emoji = reminder.emoji,
                 activeDays = reminder.activeDays,
-                // first card = composting, second = watering
                 onClick = if (index == 0) onCompostReminderClick else onReminderClick
             )
         }
     }
 }
 
+// ─────────────────────────────────────────────
+//  Reminder Card
+// ─────────────────────────────────────────────
 @Composable
 fun ReminderCard(
     title: String,
@@ -594,46 +590,43 @@ fun ReminderCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .background(AppColors.reminderGradient)
-            .clickable { onClick() }
-            .padding(18.dp)
+            .height(90.dp)
+            .shadow(elevation = 1.dp, shape = RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(26.dp))
+            .background(AppColors.CardSurfaceAlt)
+            .clickable { onClick() },
+        contentAlignment = Alignment.CenterStart
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(emoji, fontSize = 16.sp)
-                Text(
-                    title,
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
+        Text(
+            text = emoji,
+            fontSize = 64.sp,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 24.dp)
+        )
+        Text(
+            text = title,
+            color = AppColors.CardTitle,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = (-0.4).sp,
+            modifier = Modifier.padding(start = 22.dp)
+        )
     }
 }
 
-
-
 // ─────────────────────────────────────────────
-//  Explore Card  ✅ FIX 5: onClick parameter added and wired up
+//  Explore Card
 // ─────────────────────────────────────────────
 @Composable
-fun ExploreCard(onClick: () -> Unit = {}) {       // ✅ FIX: onClick parameter added
+fun ExploreCard(onClick: () -> Unit = {}) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .clickable { onClick() }               // ✅ FIX: clickable wired to onClick
-            .background(AppColors.exploreGradient)
-            .border(
-                1.dp,
-                AppColors.Garden.copy(alpha = 0.4f),
-                RoundedCornerShape(24.dp)
-            )
+            .shadow(elevation = 1.dp, shape = RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(26.dp))
+            .background(AppColors.CardSurface)
+            .clickable { onClick() }
             .padding(22.dp)
     ) {
         Row(
@@ -642,23 +635,24 @@ fun ExploreCard(onClick: () -> Unit = {}) {       // ✅ FIX: onClick parameter 
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = AppColors.Garden.copy(alpha = 0.3f),
-                    modifier = Modifier.padding(bottom = 8.dp)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(AppColors.GreenBtn.copy(alpha = 0.12f))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        "  ECO GUIDE  ",
+                        "ECO GUIDE",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
-                        color = AppColors.MintMist,
-                        letterSpacing = 1.sp,
-                        modifier = Modifier.padding(vertical = 3.dp)
+                        color = AppColors.GreenBtn,
+                        letterSpacing = 1.sp
                     )
                 }
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     "Explore Sustainable\n& Organic Growing",
-                    color = Color.White,
+                    color = AppColors.CardTitle,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.3).sp,
@@ -667,22 +661,16 @@ fun ExploreCard(onClick: () -> Unit = {}) {       // ✅ FIX: onClick parameter 
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     "Natural methods for a healthier garden →",
-                    color = AppColors.Sage,
+                    color = AppColors.CardSubtitle,
                     fontSize = 11.sp
                 )
             }
-
             Spacer(modifier = Modifier.width(16.dp))
-
             Box(
                 modifier = Modifier
                     .size(64.dp)
-                    .background(AppColors.Garden.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
-                    .border(
-                        1.dp,
-                        AppColors.Garden.copy(alpha = 0.4f),
-                        RoundedCornerShape(16.dp)
-                    ),
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(AppColors.GreenBtn.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Text("🌱", fontSize = 32.sp)
@@ -695,9 +683,11 @@ fun ExploreCard(onClick: () -> Unit = {}) {       // ✅ FIX: onClick parameter 
 //  Bottom Nav Bar
 // ─────────────────────────────────────────────
 enum class NavRoutes { Home, MyPlants, Weather, Regrow }
+
 @Composable
 fun BottomNavBar(
     modifier: Modifier = Modifier,
+    currentScreen: Screen = Screen.Home,
     onHome: () -> Unit = {},
     onMyPlants: () -> Unit = {},
     onWeather: () -> Unit = {},
@@ -705,24 +695,27 @@ fun BottomNavBar(
 ) {
     var selectedRoute by remember { mutableStateOf(NavRoutes.Home) }
 
+    // Keep selectedRoute in sync when navigating back from Plants
+    selectedRoute = when (currentScreen) {
+        Screen.Home -> NavRoutes.Home
+        Screen.MyPlants, Screen.Plants -> NavRoutes.MyPlants
+        Screen.Weather -> NavRoutes.Weather
+        Screen.Regrow -> NavRoutes.Regrow
+    }
+
     Box(
         modifier = modifier
-            .padding(horizontal = 16.dp, vertical = 16.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(AppColors.navGradient)
-            .border(
-                1.dp,
-                AppColors.Sage.copy(alpha = 0.5f),
-                RoundedCornerShape(28.dp)
-            )
+            .shadow(elevation = 8.dp, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            .background(AppColors.NavBg)
             .fillMaxWidth()
-            .height(68.dp),
+            .height(82.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
@@ -769,47 +762,39 @@ fun NavItem(
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .height(56.dp)
-            .padding(horizontal = 8.dp)
-            .clickable(onClick = onClick)
+            .padding(horizontal = 4.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
     ) {
         if (isSelected) {
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(AppColors.RichFern)
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(AppColors.GreenBtn),
                 contentAlignment = Alignment.Center
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text,
-
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = text,
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
             }
         } else {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
-                tint = AppColors.Body,
-                modifier = Modifier.size(20.dp)
+                contentDescription = text,
+                tint = Color(0xFFAAAAAA),
+                modifier = Modifier.size(22.dp)
             )
             Spacer(modifier = Modifier.height(3.dp))
             Text(
                 text,
-                color = AppColors.Muted,
+                color = Color(0xFFAAAAAA),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Normal
             )

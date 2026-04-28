@@ -66,8 +66,9 @@ fun Entry_Dashboard2(navController: NavController) {
 
             Text(
                 text = "Grow food \nfrom your kitchen ",
-                fontSize = 25.sp,
+                fontSize = 16.sp,
                 fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
                 color = Color.White
             )
             Spacer(modifier = Modifier.height(160.dp))

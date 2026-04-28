@@ -25,11 +25,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.aranyani2.ui_screens.screens.MyCustomFont
 
 // ─── Data Model ───────────────────────────────────────────────────────────────
 
@@ -212,11 +214,11 @@ val foodPlants = listOf(
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 
-val HeaderGreen = Color(0xFF1A4032)
-val AccentGreen = Color(0xFF5EC49A)
+val HeaderGreen = Color(0xFFF0F4C3)
+val AccentGreen = Color(0xFF1B5E20)
 val IconBg      = Color(0xFFD6EDE1)
 val IconStroke  = Color(0xFF2D7A52)
-val CardBg      = Color(0xFFFFFFFF)
+val CardBg      = Color(0xFFC0CA33)
 val PageBg      = Color(0xFFF0EDE6)
 val DetailBg    = Color(0xFFFAFAF8)
 val InstrBg     = Color(0xFFEDF7F0)
@@ -414,7 +416,7 @@ fun SearchBar(query: String, onQueryChange: (String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(Color.White.copy(alpha = 0.15f))
+            .background(Color.Black.copy(alpha = 0.15f))
             .padding(horizontal = 14.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -488,13 +490,16 @@ fun Regrow(onBack: () -> Unit = {}) {
                 Column {
                     Text(
                         text = "Regrowing Plants",
+                        fontFamily = MyCustomFont,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color.Black
+
                     )
                     Text(
                         text = "Learn how to grow plants using food from your vegetables",
                         fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
                         color = AccentGreen
                     )
                 }

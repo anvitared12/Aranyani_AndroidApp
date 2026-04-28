@@ -35,7 +35,7 @@ interface DiseaseApi {
 }
 
 object DiseaseApiClient {
-    private const val BASE_URL = "https://diseaseidentification-backend.onrender.com/"
+    private const val BASE_URL = "http://65.2.31.50:8000/"
 
     val api: DiseaseApi by lazy {
         val logging = HttpLoggingInterceptor().apply {

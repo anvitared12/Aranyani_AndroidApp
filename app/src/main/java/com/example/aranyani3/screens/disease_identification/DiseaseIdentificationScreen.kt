@@ -18,22 +18,26 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import com.example.aranyani3.R
 import com.example.aranyani3.models.DiseaseApiClient
 import com.example.aranyani3.models.DiseaseResult
 import com.example.aranyani3.viewmodel.ScanHistoryViewModel
-import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,13 +48,17 @@ import java.io.File
 
 private const val TAG = "DiseaseDetection"
 
+// ── Theme colors matching Home Screen ──
+private val GreenButton  = Color(0xFF4A7A2F)
+private val GreenDark    = Color(0xFF3A6020)
+
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-
 fun DiseaseDetectionScreen(
     onAddCureClick: (String) -> Unit = {},
-    scanHistoryViewModel: ScanHistoryViewModel  // ✅ NEW
+    scanHistoryViewModel: ScanHistoryViewModel,
+    onBack: () -> Unit = {}          // ← new back callback
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -61,10 +69,7 @@ fun DiseaseDetectionScreen(
     var result by remember { mutableStateOf<DiseaseResult?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val cameraImageFile = remember {
-        File(context.cacheDir, "disease_capture.jpg")
-    }
-
+    val cameraImageFile = remember { File(context.cacheDir, "disease_capture.jpg") }
     val cameraImageUri = remember {
         FileProvider.getUriForFile(
             context,
@@ -116,187 +121,222 @@ fun DiseaseDetectionScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Disease Identification",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
+    // ── Root Box: background image fills entire screen ──
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        // Background image (place background2.png/jpg in res/drawable/)
+        Image(
+            painter = painterResource(id = R.drawable.download6),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
         )
 
-        // Image preview
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Box(
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { Text("Disease Identification", color = Color.White) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = Color.White,
+                        navigationIconContentColor = Color.White
+                    )
+                )
+            }
+        ) { padding ->
+
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val bmp = imageBitmap
-                if (bmp != null) {
-                    Image(
-                        bitmap = bmp.asImageBitmap(),
-                        contentDescription = "Selected leaf",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Text(
-                        text = "Pick or capture an image of the affected leaf",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(24.dp)
-                    )
-                }
-            }
-        }
 
-        Spacer(Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(
-                onClick = {
-                    cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
-                },
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Default.PhotoCamera, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Camera")
-            }
-
-            OutlinedButton(
-                onClick = { galleryLauncher.launch("image/*") },
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Default.PhotoLibrary, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Gallery")
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        Button(
-            onClick = {
-                val uri = imageUri ?: return@Button
-                scope.launch {
-                    isLoading = true
-                    errorMessage = null
-                    result = null
-                    try {
-                        val response = withContext(Dispatchers.IO) {
-                            val part = if (uri == cameraImageUri && cameraImageFile.exists()) {
-                                fileToMultipart(cameraImageFile)
-                            } else {
-                                uriToMultipart(context, uri)
-                            }
-                            Log.d(TAG, "Uploading: ${part.body.contentLength()} bytes")
-                            DiseaseApiClient.api.detect(part)
-                        }
-                        Log.d(TAG, "Response: $response")
-                        result = response
-
-                        // ✅ NEW — save to scan history after successful detection
-                        scanHistoryViewModel.saveScan(
-                            context = context,
-                            imageUri = uri,
-                            scanType = "disease",
-                            name = response.displayName()
-                        )
-
-                    } catch (e: retrofit2.HttpException) {
-                        val errorBody = try {
-                            e.response()?.errorBody()?.string()
-                        } catch (ex: Exception) { null }
-
-                        if (e.code() == 404) {
-                            val detail = errorBody
-                                ?.substringAfter("\"detail\":\"", "")
-                                ?.substringBefore("\"", "")
-                                ?.takeIf { it.isNotEmpty() }
-                            errorMessage = detail
-                                ?: "Could not identify disease. Try a clearer, closer photo of the leaf."
+                // Image preview
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(280.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0x55000000)).alpha(0.6f),  // translucent white like PlantIdentifyScreen
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val bmp = imageBitmap
+                        if (bmp != null) {
+                            Image(
+                                bitmap = bmp.asImageBitmap(),
+                                contentDescription = "Selected leaf",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         } else {
-                            errorMessage = when (e.code()) {
-                                422 -> "Validation error: $errorBody"
-                                500 -> "Server error: $errorBody"
-                                else -> "HTTP ${e.code()}: $errorBody"
-                            }
+                            Text(
+                                text = "Pick or capture an image of the affected leaf",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White,
+                                modifier = Modifier.padding(24.dp)
+                            )
                         }
-                        Log.e(TAG, "HttpException ${e.code()}: $errorBody", e)
-                    } catch (e: com.google.gson.JsonSyntaxException) {
-                        errorMessage = "Unexpected response format from server."
-                        Log.e(TAG, "JSON parse error", e)
-                    } catch (e: java.net.SocketTimeoutException) {
-                        errorMessage = "Request timed out. Server may be waking up — please try again."
-                        Log.e(TAG, "Timeout", e)
-                    } catch (e: java.io.IOException) {
-                        errorMessage = "Network error: ${e.message}"
-                        Log.e(TAG, "IOException", e)
-                    } catch (e: Exception) {
-                        errorMessage = "Unexpected error [${e.javaClass.simpleName}]: ${e.message}"
-                        Log.e(TAG, "Unknown error", e)
-                    } finally {
-                        isLoading = false
                     }
                 }
-            },
-            enabled = imageUri != null && !isLoading,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("Detecting…")
-            } else {
-                Text("Detect Disease")
+
+                Spacer(Modifier.height(16.dp))
+
+                // Camera / Gallery buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenButton)
+                    ) {
+                        Icon(Icons.Default.PhotoCamera, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Camera")
+                    }
+
+                    Button(
+                        onClick = { galleryLauncher.launch("image/*") },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenButton)
+                    ) {
+                        Icon(Icons.Default.PhotoLibrary, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Gallery")
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // Detect button
+                Button(
+                    onClick = {
+                        val uri = imageUri ?: return@Button
+                        scope.launch {
+                            isLoading = true
+                            errorMessage = null
+                            result = null
+                            try {
+                                val response = withContext(Dispatchers.IO) {
+                                    val part = if (uri == cameraImageUri && cameraImageFile.exists()) {
+                                        fileToMultipart(cameraImageFile)
+                                    } else {
+                                        uriToMultipart(context, uri)
+                                    }
+                                    Log.d(TAG, "Uploading: ${part.body.contentLength()} bytes")
+                                    DiseaseApiClient.api.detect(part)
+                                }
+                                Log.d(TAG, "Response: $response")
+                                result = response
+
+                                scanHistoryViewModel.saveScan(
+                                    context = context,
+                                    imageUri = uri,
+                                    scanType = "disease",
+                                    name = response.displayName()
+                                )
+
+                            } catch (e: retrofit2.HttpException) {
+                                val errorBody = try {
+                                    e.response()?.errorBody()?.string()
+                                } catch (ex: Exception) { null }
+
+                                if (e.code() == 404) {
+                                    val detail = errorBody
+                                        ?.substringAfter("\"detail\":\"", "")
+                                        ?.substringBefore("\"", "")
+                                        ?.takeIf { it.isNotEmpty() }
+                                    errorMessage = detail
+                                        ?: "Could not identify disease. Try a clearer, closer photo of the leaf."
+                                } else {
+                                    errorMessage = when (e.code()) {
+                                        422 -> "Validation error: $errorBody"
+                                        500 -> "Server error: $errorBody"
+                                        else -> "HTTP ${e.code()}: $errorBody"
+                                    }
+                                }
+                                Log.e(TAG, "HttpException ${e.code()}: $errorBody", e)
+                            } catch (e: com.google.gson.JsonSyntaxException) {
+                                errorMessage = "Unexpected response format from server."
+                                Log.e(TAG, "JSON parse error", e)
+                            } catch (e: java.net.SocketTimeoutException) {
+                                errorMessage = "Request timed out. Server may be waking up — please try again."
+                                Log.e(TAG, "Timeout", e)
+                            } catch (e: java.io.IOException) {
+                                errorMessage = "Network error: ${e.message}"
+                                Log.e(TAG, "IOException", e)
+                            } catch (e: Exception) {
+                                errorMessage = "Unexpected error [${e.javaClass.simpleName}]: ${e.message}"
+                                Log.e(TAG, "Unknown error", e)
+                            } finally {
+                                isLoading = false
+                            }
+                        }
+                    },
+                    enabled = imageUri != null && !isLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenButton)
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Detecting…")
+                    } else {
+                        Text("Detect Disease")
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                errorMessage?.let {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = it,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
+
+                result?.let { res ->
+                    ResultCard(
+                        result = res,
+                        onAddCureClick = { onAddCureClick(res.displayName()) }
+                    )
+                }
             }
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        errorMessage?.let {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-
-        result?.let { res ->
-            ResultCard(
-                result = res,
-                onAddCureClick = { onAddCureClick(res.displayName()) }
-            )
         }
     }
 }
@@ -366,8 +406,8 @@ private fun ResultCard(
                 onClick = onAddCureClick,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = Color(0xFF4A7A2F),
+                    contentColor = Color.White
                 )
             ) {
                 Text("Add Cure for Disease")
@@ -424,9 +464,9 @@ private fun uriToMultipart(context: Context, uri: Uri): MultipartBody.Part {
     val resolver = context.contentResolver
     val mimeType = resolver.getType(uri) ?: "image/jpeg"
     val extension = when (mimeType) {
-        "image/png" -> ".png"
+        "image/png"  -> ".png"
         "image/webp" -> ".webp"
-        else -> ".jpg"
+        else         -> ".jpg"
     }
     val tempFile = File.createTempFile("upload_", extension, context.cacheDir)
     resolver.openInputStream(uri)?.use { input ->

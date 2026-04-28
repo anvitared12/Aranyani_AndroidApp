@@ -35,7 +35,7 @@ fun Entry_Dashboard3(navController: NavController){
 
         // 🌿 Background Image
         Image(
-            painter = painterResource(id = R.drawable.first), // your image
+            painter = painterResource(id = R.drawable.third), // your image
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -56,7 +56,7 @@ fun Entry_Dashboard3(navController: NavController){
         ) {
 
             Text(
-                text = "Regrow",
+                text = "Identify",
                 fontSize = 50.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Cursive,
@@ -66,8 +66,9 @@ fun Entry_Dashboard3(navController: NavController){
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Grow food \nfrom your kitchen ",
-                fontSize = 25.sp,
+                text = "Identify unique plants ",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
                 color = Color.White
             )

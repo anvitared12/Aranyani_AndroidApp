@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 
 object CareRetrofitClient {
 
-    private const val BASE_URL = "https://carerecommendation-backend.onrender.com/"
+    private const val BASE_URL = "http://13.232.65.246:8002/"
 
     private val client = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {

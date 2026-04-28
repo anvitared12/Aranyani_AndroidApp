@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-const val DEFAULT_API_URL = "https://gardenplanner-backend.onrender.com"
+const val DEFAULT_API_URL = "http://13.233.183.118:8001"
 
 data class GardenUiState(
     val photoUri: Uri? = null,
@@ -138,12 +138,19 @@ class GardenViewModel : ViewModel() {
         }
     }
 
-    // ✅ onSuccess callback added — called when plants load successfully
     fun loadPlants() {
         val s = _state.value
-        val diameter = s.potDiameterCm.toFloatOrNull() ?: return
-        val height   = s.potHeightCm.toFloatOrNull()   ?: return
+        val diameter = s.potDiameterCm.toFloatOrNull() ?: run {
+            android.util.Log.w("GardenVM", "loadPlants skipped: potDiameterCm='${s.potDiameterCm}'")
+            return
+        }
+        val height = s.potHeightCm.toFloatOrNull() ?: run {
+            android.util.Log.w("GardenVM", "loadPlants skipped: potHeightCm='${s.potHeightCm}'")
+            return
+        }
+
         _state.update { it.copy(isLoadingPlants = true, plantsError = null, plants = emptyList()) }
+
         viewModelScope.launch {
             GardenApiService.getRecommendations(s.apiBaseUrl, diameter, height).fold(
                 onSuccess = { r ->

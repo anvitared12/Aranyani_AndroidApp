@@ -66,8 +66,9 @@ fun FirstScreen(navController: NavController) {
 
             Text(
                 text = "Listen to earth.\nLead with Aranyani",
-                fontSize = 25.sp,
+                fontSize = 16.sp,
                 fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
                 color = Color.White
             )
             Spacer(modifier = Modifier.height(160.dp))
