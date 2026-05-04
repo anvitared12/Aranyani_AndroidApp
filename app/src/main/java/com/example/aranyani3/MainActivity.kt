@@ -260,7 +260,7 @@ fun AppNavigation() {
             HomeScreen(
                 viewModel      = gardenViewModel,
                 onPhotoTaken   = { navController.navigate("gardenMarkup") },
-                onSettingsClick = { },
+
                 onBack          = { navController.popBackStack() }
             )
         }

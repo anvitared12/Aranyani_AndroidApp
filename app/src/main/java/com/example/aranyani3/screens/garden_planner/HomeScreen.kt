@@ -37,14 +37,13 @@ private const val TAG = "GardenHome"
 
 // ── Theme colors matching Home Screen ──
 private val GreenButton  = Color(0xFF4A7A2F)
-private val CardBg       = Color(0x33FFFFFF)   // translucent white like PlantIdentifyScreen
+private val CardBg       = Color(0x33FFFFFF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: GardenViewModel,
     onPhotoTaken: () -> Unit,
-    onSettingsClick: () -> Unit,
     onBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -63,10 +62,8 @@ fun HomeScreen(
         }
     }
 
-    // ── Root Box: background image fills entire screen ──
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // Background image
         Image(
             painter = painterResource(id = R.drawable.homebackground),
             contentDescription = null,
@@ -106,7 +103,6 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
 
-                // Icon circle — translucent white
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -144,7 +140,6 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(48.dp))
 
-                // Steps card — translucent white like image preview
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
@@ -162,7 +157,6 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(48.dp))
 
-                // Open Camera button — green
                 Button(
                     onClick = {
                         val uri = createTempImageUri(context)
@@ -206,7 +200,7 @@ private fun StepRow(number: Int, text: String) {
             modifier = Modifier
                 .size(28.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF4A7A2F)),   // green circle number
+                .background(Color(0xFF4A7A2F)),
             contentAlignment = Alignment.Center,
         ) {
             Text(

@@ -32,7 +32,6 @@ fun PlantsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    // KEY FIX: re-fires only when diameter/height are actually set (non-blank)
     LaunchedEffect(state.potDiameterCm, state.potHeightCm) {
         if (state.potDiameterCm.isNotBlank() && state.potHeightCm.isNotBlank()) {
             viewModel.loadPlants()
@@ -99,7 +98,6 @@ fun PlantsScreen(
                     }
                 }
 
-                // Show a hint if dimensions not yet provided
                 state.potDiameterCm.isBlank() -> {
                     Column(
                         modifier = Modifier

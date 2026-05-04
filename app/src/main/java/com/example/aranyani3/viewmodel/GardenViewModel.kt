@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-const val DEFAULT_API_URL = "http://13.233.183.118:8001"
+const val DEFAULT_API_URL = "http://13.232.144.94:8001"
 
 data class GardenUiState(
     val photoUri: Uri? = null,
